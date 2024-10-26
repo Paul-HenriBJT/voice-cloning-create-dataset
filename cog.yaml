@@ -2,20 +2,15 @@
 # Reference: https://github.com/replicate/cog/blob/main/docs/yaml.md
 
 build:
-  # set to true if your model requires a GPU
   gpu: true
 
-  # a list of ubuntu apt packages to install
   system_packages:
     - "aria2"
     - "libgl1-mesa-glx"
     - "zip"
-  #   - "libglib2.0-0"
 
-  # python version in the form '3.11' or '3.11.4'
   python_version: "3.9"
 
-  # a list of packages in the format <package-name>==<version>
   python_packages:
     - "torch"
     - "torchvision"
@@ -27,9 +22,7 @@ build:
     - "soundfile==0.12.1"
     - "joblib>=1.1.0"
     - "numba==0.56.4"
-    - "numpy==1.23.5"
     - "scipy==1.11.1"
-    - "librosa==0.9.1"
     - "llvmlite==0.39.0"
     - "fairseq==0.12.2"
     - "faiss-cpu==1.7.3"
@@ -72,15 +65,13 @@ build:
     - "ffmpy==0.3.1"
     - "python-dotenv>=1.0.0"
     - "av==11.0.0"
+    - "imageio[ffmpeg]"          # Added this line
+    - "omegaconf>=2.1.1"         # Added this line
     - "demucs==4.0.1"
 
-  # commands run after the environment is setup
   run:
-    - pip install --upgrade pip
+    - pip install --upgrade pip setuptools packaging
     - apt-get update && apt-get install -y ffmpeg
-    - pip install PyYAML==6.0.1
-    - pip install imageio[ffmpeg]
-    - pip install demucs==4.0.1
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
