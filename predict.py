@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 # Prediction interface for Cog ⚙️
-# https://github.com/replicate/cog/blob/main/docs/python.md
-
+from typing import List
 from cog import BasePredictor, Input, Path as CogPath
 from pathlib import Path
 import os
@@ -179,21 +178,14 @@ class Slicer:
             return chunks
 
 
-#!/usr/bin/env python3
-
-# Previous imports remain the same...
-from cog import BasePredictor, Input, Path as CogPath
-from pathlib import Path
-# ... other imports remain the same ...
-
 class Predictor(BasePredictor):
     def setup(self) -> None:
         pass
 
     def predict(
         self,
-        audio_file: CogPath = Input(
-            description="Audio file (MP3 or WAV) to create your RVC v2 dataset from",
+        audio_files: List[CogPath] = Input(
+            description="List of audio files (MP3 or WAV) to create your RVC v2 dataset from",
         ),
         audio_name: str = Input(
             default="rvc_v2_voices",
@@ -208,6 +200,7 @@ class Predictor(BasePredictor):
         folders = [
             "separated/htdemucs",
             f"dataset/{AUDIO_NAME}",
+            "temp_wavs"
         ]
         for folder in folders:
             try:
@@ -215,53 +208,58 @@ class Predictor(BasePredictor):
             except FileNotFoundError:
                 pass
 
-        # Delete old output
-        try:
-            os.remove(f"dataset_{AUDIO_NAME}.zip")
-        except FileNotFoundError:
-            pass
-
         # Create necessary directories
         os.makedirs("separated/htdemucs", exist_ok=True)
         os.makedirs(f"dataset/{AUDIO_NAME}", exist_ok=True)
+        os.makedirs("temp_wavs", exist_ok=True)
 
-        # Convert input to WAV if it's MP3
-        if str(audio_file).lower().endswith('.mp3'):
-            output_wav = "input_audio.wav"
-            command = f"ffmpeg -i {audio_file} {output_wav}"
-            subprocess.run(command.split(), check=True)
-            input_path = output_wav
-        else:
-            input_path = str(audio_file)
+        # Process each audio file
+        split_counter = 0
+        for file_index, audio_file in enumerate(audio_files):
+            print(f"Processing file {file_index + 1} of {len(audio_files)}: {audio_file}")
+            
+            # Convert to WAV if needed
+            if str(audio_file).lower().endswith('.mp3'):
+                output_wav = f"temp_wavs/input_{file_index}.wav"
+                command = f"ffmpeg -i {audio_file} {output_wav}"
+                subprocess.run(command.split(), check=True)
+                input_path = output_wav
+            else:
+                input_path = str(audio_file)
 
-        # Separate Vocal and Instrument/Noise using Demucs
-        command = f"demucs --two-stems=vocals {input_path}"
-        process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
-        output, _ = process.communicate()
-        print(output.decode())
+            # Separate vocals using Demucs
+            command = f"demucs --two-stems=vocals {input_path}"
+            process = subprocess.Popen(command.split(), stdout=subprocess.PIPE)
+            output, _ = process.communicate()
+            print(output.decode())
 
-        # Get the base name of the input file without extension
-        base_name = os.path.splitext(os.path.basename(input_path))[0]
-        
-        # Load and process the vocals
-        vocals_path = f"separated/htdemucs/{base_name}/vocals.wav"
-        audio, sr = librosa.load(vocals_path, sr=None, mono=False)
-        
-        slicer = Slicer(
-            sr=sr,
-            threshold=-40,
-            min_length=5000,
-            min_interval=500,
-            hop_size=10,
-            max_sil_kept=500,
-        )
-        chunks = slicer.slice(audio)
-        
-        # Save the sliced audio files
-        for i, chunk in enumerate(chunks):
-            if len(chunk.shape) > 1:
-                chunk = chunk.T
-            soundfile.write(f"dataset/{AUDIO_NAME}/split_{i}.wav", chunk, sr)
+            # Get the base name of the input file without extension
+            base_name = os.path.splitext(os.path.basename(input_path))[0]
+            
+            # Load and process the vocals
+            vocals_path = f"separated/htdemucs/{base_name}/vocals.wav"
+            try:
+                audio, sr = librosa.load(vocals_path, sr=None, mono=False)
+            except FileNotFoundError:
+                print(f"Warning: Could not find vocals for {base_name}, skipping...")
+                continue
+            
+            slicer = Slicer(
+                sr=sr,
+                threshold=-40,
+                min_length=5000,
+                min_interval=500,
+                hop_size=10,
+                max_sil_kept=500,
+            )
+            chunks = slicer.slice(audio)
+            
+            # Save the sliced audio files
+            for chunk in chunks:
+                if len(chunk.shape) > 1:
+                    chunk = chunk.T
+                soundfile.write(f"dataset/{AUDIO_NAME}/split_{split_counter}.wav", chunk, sr)
+                split_counter += 1
 
         # Create zip file
         output_zip_path = f"dataset_{AUDIO_NAME}.zip"
@@ -288,11 +286,11 @@ class Predictor(BasePredictor):
             else:
                 print(f"Output: {stdout.decode()}")
 
-        # Cleanup
-        if str(audio_file).lower().endswith('.mp3'):
-            try:
-                os.remove(output_wav)
-            except FileNotFoundError:
-                pass
+        # Cleanup temporary files
+        try:
+            shutil.rmtree("temp_wavs")
+            shutil.rmtree("separated/htdemucs")
+        except FileNotFoundError:
+            pass
 
         return CogPath(output_zip_path)
