@@ -55,7 +55,7 @@ build:
     - "uc-micro-py>=1.0.1"
     - "sympy>=1.11.1"
     - "tabulate>=0.8.10"
-    - "PyYAML>=6.0"
+    - "PyYAML==6.0.1"
     - "pyasn1>=0.4.8"
     - "pyasn1-modules>=0.2.8"
     - "fsspec>=2022.11.0"
@@ -72,14 +72,15 @@ build:
     - "ffmpy==0.3.1"
     - "python-dotenv>=1.0.0"
     - "av==11.0.0"
-    - "demucs>=4.0.1"
+    - "demucs==4.0.1"
 
   # commands run after the environment is setup
   run:
     - pip install --upgrade pip
     - apt-get update && apt-get install -y ffmpeg
+    - pip install PyYAML==6.0.1
     - pip install imageio[ffmpeg]
-    - pip install demucs
+    - pip install demucs==4.0.1
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
