@@ -1,0 +1,11 @@
+torch
+torchvision
+torchaudio
+demucs>=4.0.1
+numpy==1.23.5
+librosa==0.9.1
+soundfile==0.12.1
+numba==0.56.4
+scipy==1.11.1
+ffmpeg-python>=0.2.0
+python-dotenv>=1.0.0

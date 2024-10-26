@@ -179,14 +179,20 @@ class Slicer:
             return chunks
 
 
+#!/usr/bin/env python3
+
+# Previous imports remain the same...
+from cog import BasePredictor, Input, Path as CogPath
+from pathlib import Path
+# ... other imports remain the same ...
+
 class Predictor(BasePredictor):
     def setup(self) -> None:
-        """Load the model into memory to make running multiple predictions efficient"""
         pass
 
     def predict(
         self,
-        audio_file: Path = Input(
+        audio_file: CogPath = Input(
             description="Audio file (MP3 or WAV) to create your RVC v2 dataset from",
         ),
         audio_name: str = Input(
@@ -220,8 +226,8 @@ class Predictor(BasePredictor):
         os.makedirs(f"dataset/{AUDIO_NAME}", exist_ok=True)
 
         # Convert input to WAV if it's MP3
-        if audio_file.suffix.lower() == '.mp3':
-            output_wav = f"input_audio.wav"
+        if str(audio_file).lower().endswith('.mp3'):
+            output_wav = "input_audio.wav"
             command = f"ffmpeg -i {audio_file} {output_wav}"
             subprocess.run(command.split(), check=True)
             input_path = output_wav
@@ -283,7 +289,7 @@ class Predictor(BasePredictor):
                 print(f"Output: {stdout.decode()}")
 
         # Cleanup
-        if audio_file.suffix.lower() == '.mp3':
+        if str(audio_file).lower().endswith('.mp3'):
             try:
                 os.remove(output_wav)
             except FileNotFoundError:
