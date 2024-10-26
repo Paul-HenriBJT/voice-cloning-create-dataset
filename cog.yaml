@@ -69,8 +69,10 @@ build:
     - "demucs==4.0.1"
 
   run:
-    - pip install --upgrade pip setuptools packaging
+    - pip install --upgrade pip
     - apt-get update && apt-get install -y ffmpeg
+    - pip install imageio[ffmpeg]
+    - pip install demucs
 
 # predict.py defines how predictions are run on your model
 predict: "predict.py:Predictor"
