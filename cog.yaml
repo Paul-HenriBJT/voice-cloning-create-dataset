@@ -65,8 +65,7 @@ build:
     - "ffmpy==0.3.1"
     - "python-dotenv>=1.0.0"
     - "av==11.0.0"
-    - "imageio[ffmpeg]"          # Added this line
-    - "omegaconf>=2.1.1"         # Added this line
+    - "imageio[ffmpeg]"
     - "demucs==4.0.1"
 
   run:
