@@ -72,5 +72,5 @@ build:
     - apt-get update && apt-get install -y ffmpeg
     - python -m pip install --upgrade pip setuptools wheel
     - pip install --no-cache-dir imageio[ffmpeg]
-    - pip install --no-cache-dir "omegaconf==2.0.6"
+    - pip install --no-cache-dir omegaconf
     - pip install --no-cache-dir demucs==4.0.1
